@@ -1,0 +1,55 @@
+real-time 1:1 chat app using React Native (frontend) and Node.js (Express + Socket.IO) backend. Store data in a database (MongoDB/Postgres).
+
+Requirements (MVP)
+
+Auth: Register, Login (JWT-based).
+
+User List: Show all users, tap to start chat.
+
+Chat Screen:
+
+Real-time messaging (Socket.IO).
+
+Messages persist in DB.
+
+Typing indicator.
+
+Online/offline status.
+
+Message delivery/read receipts.
+
+Basic UI:
+
+Auth screens.
+
+Home (user list + last message).
+
+Chat (scrollable messages, input box, typing, ticks).
+
+API & Socket (minimum)
+
+REST:
+
+POST /auth/register, POST /auth/login
+
+GET /users
+
+GET /conversations/:id/messages
+
+Socket events:
+
+message:send → send new msg
+
+message:new → receive msg
+
+typing:start|stop
+
+message:read
+
+Deliverables
+
+GitHub repo with /mobile (React Native) + /server (Node).
+
+README: setup, run, env vars, sample users.
+
+Short demo video (≤5 min).

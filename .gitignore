@@ -1,0 +1,11 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Build folder
+build/
+
+# MongoDB database
+server/data/db/

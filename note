@@ -1,0 +1,1 @@
+mongod --dbpath "E:\chat-app\server\data\db"
