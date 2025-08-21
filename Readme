@@ -87,3 +87,14 @@ chat-app/
 ├── .gitignore
 ├── package.json
 └── README.md
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+👩‍💻 Sample Users for Testing
+
+Use these sample accounts for quick testing:
+
+Name	Email	          Password
+abc	   abc@example.com    abc@123
+xyz	   xyz@example.com    xyz@123
+def	   def@example.com    def@123
