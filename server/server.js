@@ -43,9 +43,8 @@ const io = new Server(server, {
     }
 });
 
-// A set to keep track of online user IDs
-let onlineUsers = new Set();
-let userSocketMap = new Map();
+// A map to track online users and their corresponding socket IDs
+const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
@@ -59,18 +58,33 @@ io.on('connection', (socket) => {
     socket.on('message:send', async (msg) => {
         try {
             const conversationId = msg.conversationId;
+            let senderUsername = "Unknown";
+
+            // Fetch the user's username directly from the database for reliability
+            const senderUser = await User.findById(msg.senderId);
+            
+            // This is the critical change: check if the user and username exist
+            if (senderUser && senderUser.username) {
+                senderUsername = senderUser.username;
+            } else {
+                console.error("Error: Sender user or username not found for ID:", msg.senderId);
+                // Return early to prevent the validation error
+                return;
+            }
+
             const newMessage = new (require('./models/Message'))({
                 conversationId: conversationId,
                 senderId: msg.senderId,
-                content: msg.content
+                content: msg.content,
+                senderUsername: senderUsername
             });
             await newMessage.save();
 
-            const senderUser = await User.findById(msg.senderId);
             const messageWithUsername = {
                 ...newMessage.toObject(),
-                senderUsername: senderUser.username
+                senderUsername: senderUsername
             };
+            // Broadcast the new message to all clients in the conversation room
             io.to(conversationId).emit('message:new', messageWithUsername);
         } catch (err) {
             console.error('Error sending message:', err);
@@ -79,6 +93,7 @@ io.on('connection', (socket) => {
 
     // Handle typing status
     socket.on('typing:start', ({ conversationId, username }) => {
+        // Broadcast to everyone in the room except the sender
         socket.to(conversationId).emit('typing:start', username);
     });
 
@@ -86,24 +101,33 @@ io.on('connection', (socket) => {
         socket.to(conversationId).emit('typing:stop', "");
     });
 
-    // --- Critical changes for online status ---
-    // Listen for 'login' events from the client
+    // Handle user login (explicitly emitted by client on login/register)
     socket.on('login', async (userId) => {
         if (userId) {
-            onlineUsers.add(userId);
-            userSocketMap.set(userId, socket.id); // Map user ID to socket ID
-            io.emit('user:online', userId); // Announce that the user is now online
+            onlineUsers.set(userId, socket.id);
             // Update the user's online status in the database
             await User.findByIdAndUpdate(userId, { online: true });
+            // Broadcast that the user is now online to all clients
+            io.emit('user:online', userId);
         }
     });
 
-    // Listen for disconnections and automatically handle status
+    // Handle explicit user logout
+    socket.on('logout', async (userId) => {
+        if (userId && onlineUsers.has(userId)) {
+            onlineUsers.delete(userId);
+            // Update the user's online status in the database
+            await User.findByIdAndUpdate(userId, { online: false });
+            // Broadcast that the user is now offline to all clients
+            io.emit('user:offline', userId);
+        }
+    });
+
+    // Handle user disconnection (occurs when a user closes a tab or loses connection)
     socket.on('disconnect', async () => {
-        console.log('User disconnected:', socket.id);
-        // Find the user ID by their socket ID
+        // Find the user ID associated with this socket ID
         let userId = null;
-        for (let [key, value] of userSocketMap.entries()) {
+        for (let [key, value] of onlineUsers.entries()) {
             if (value === socket.id) {
                 userId = key;
                 break;
@@ -111,16 +135,17 @@ io.on('connection', (socket) => {
         }
         if (userId) {
             onlineUsers.delete(userId);
-            userSocketMap.delete(userId); // Remove from the map
-            io.emit('user:offline', userId); // Announce that the user is now offline
             // Update the user's online status in the database
             await User.findByIdAndUpdate(userId, { online: false });
+            // Broadcast that the user is now offline
+            io.emit('user:offline', userId);
         }
     });
-
+    
     // Handle initial online users request
     socket.on('getOnlineUsers', () => {
-        socket.emit('onlineUsers', Array.from(onlineUsers));
+        // Send the list of all online user IDs to the requesting client
+        socket.emit('onlineUsers', Array.from(onlineUsers.keys()));
     });
 });
 
