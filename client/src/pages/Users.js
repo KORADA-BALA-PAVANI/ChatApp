@@ -1,3 +1,4 @@
+// /client/src/pages/Users.js
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -71,7 +72,8 @@ function Users() {
 
   // Function to handle user logout
   const handleLogout = () => {
-    socket.emit('logout', currentUserId);
+    // We no longer need to emit a 'logout' event here, as the server
+    // will handle it automatically when the user's socket disconnects.
     localStorage.clear();
     navigate('/');
   };
@@ -85,7 +87,8 @@ function Users() {
         </p>
         <button
           onClick={handleLogout}
-          className="w-full bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors duration-200 font-semibold mb-6 shadow-md"
+          // Changed color classes here from bg-red-500 to bg-green-600
+          className="w-full bg-green-600 text-white p-2 rounded-full hover:bg-green-700 transition-colors duration-200 font-semibold mb-6 shadow-md"
         >
           Logout
         </button>

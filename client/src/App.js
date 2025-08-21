@@ -15,19 +15,9 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   // Disconnect from socket on window close
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      const userId = localStorage.getItem("userId");
-      if (userId) {
-        socket.emit('logout', userId);
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
-
+  // This useEffect hook is now removed, as the server will handle online/offline status
+  // based on the socket connection itself.
+  
   return (
     <Router>
       <Routes>
